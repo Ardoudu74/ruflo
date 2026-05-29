@@ -34,7 +34,8 @@
       "Bash(npx:*)",
       "mcp__claude-flow__*",
       "mcp__ruv-swarm__*",
-      "mcp__flow-nexus__*"
+      "mcp__flow-nexus__*",
+      "mcp__ruflo__*"
     ],
     "deny": [
       "Read(./.env)",
@@ -280,6 +281,7 @@
     }
   },
   "enabledMcpjsonServers": [
-    "claude-flow"
+    "claude-flow",
+    "ruflo"
   ]
 }
