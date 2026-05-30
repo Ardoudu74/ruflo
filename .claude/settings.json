@@ -35,7 +35,9 @@
       "mcp__claude-flow__*",
       "mcp__ruv-swarm__*",
       "mcp__flow-nexus__*",
-      "mcp__ruflo__*"
+      "mcp__ruflo__*",
+      "Bash(claude mcp *)",
+      "Bash(pnpm --version)"
     ],
     "deny": [
       "Read(./.env)",
