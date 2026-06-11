@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "NightOut",
+    "slug": "nightout",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "nightout",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0d0010"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.nightout.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "NightOut uses your location for Safe Night mode and to find nearby venues.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "NightOut uses your location in background for Safe Night emergency sharing.",
+        "NSCameraUsageDescription": "NightOut needs camera access to record venue stories.",
+        "NSMicrophoneUsageDescription": "NightOut needs microphone access to record venue stories.",
+        "NSPhotoLibraryUsageDescription": "NightOut needs photo library access to upload venue stories."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d0010"
+      },
+      "package": "com.nightout.app",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "RECORD_AUDIO"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "NightOut uses your location for Safe Night emergency sharing." }],
+      ["expo-image-picker", { "photosPermission": "NightOut needs photo library access to upload venue stories.", "cameraPermission": "NightOut needs camera access to record venue stories.", "microphonePermission": "NightOut needs microphone access to record venue stories." }]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
