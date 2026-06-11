@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { Type } from '../../constants/Typography';
 import { Spacing, Radius } from '../../constants/Spacing';
-import { useAuthStore, selectIsAuthenticated } from '../../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useAppStore } from '../../store/useAppStore';
 import { VENUES } from '../../data/venues';
 import { signOut } from '../../services/auth';
@@ -13,7 +13,6 @@ import { signOut } from '../../services/auth';
 export default function ProfileTab() {
   const router = useRouter();
   const { profile, uid } = useAuthStore();
-  const isAuth = useAuthStore(selectIsAuthenticated);
   const { savedVenueIds } = useAppStore();
   const savedVenues = VENUES.filter(v => savedVenueIds.includes(v.id));
 
@@ -38,18 +37,15 @@ export default function ProfileTab() {
     <View style={{ flex: 1, backgroundColor: Colors.ink }}>
       <LinearGradient colors={[Colors.ink, '#000']} style={StyleSheet.absoluteFill} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* Avatar */}
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>🌙</Text>
         </View>
         <Text style={styles.name}>{profile?.displayName?.toUpperCase() ?? 'NIGHT WALKER'}</Text>
         {profile?.email && <Text style={styles.email}>{profile.email}</Text>}
 
-        {!isAuth && (
-          <TouchableOpacity style={styles.signInBtn} onPress={() => router.push('/auth')}>
-            <Text style={styles.signInBtnText}>SIGN IN WITH APPLE</Text>
-          </TouchableOpacity>
-        )}
-
+        {/* Taste summary */}
         {profile?.genres?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -87,12 +83,17 @@ export default function ProfileTab() {
           </View>
         )}
 
+        {/* Saved venues */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>SAVED VENUES ({savedVenues.length})</Text>
           {savedVenues.length === 0
             ? <Text style={styles.empty}>None saved yet</Text>
             : savedVenues.map(v => (
-              <TouchableOpacity key={v.id} style={styles.savedItem} onPress={() => router.push(`/venue/${v.id}`)}>
+              <TouchableOpacity
+                key={v.id}
+                style={styles.savedItem}
+                onPress={() => router.push(`/venue/${v.id}`)}
+              >
                 <Text style={styles.savedName}>{v.name}</Text>
                 <Text style={styles.savedCity}>{v.city.toUpperCase()}</Text>
               </TouchableOpacity>
@@ -100,21 +101,21 @@ export default function ProfileTab() {
           }
         </View>
 
+        {/* Tickets entry point */}
         <TouchableOpacity style={styles.savedItem} onPress={() => router.push('/tickets')}>
           <Text style={[styles.savedName, { color: Colors.gold }]}>YOUR TICKETS →</Text>
           <Text style={styles.savedCity}>VIEW ALL</Text>
         </TouchableOpacity>
 
+        {/* B2B Dashboard */}
         <TouchableOpacity style={styles.savedItem} onPress={() => router.push('/b2b')}>
           <Text style={[styles.savedName, { color: '#7C3AED' }]}>VENUE DASHBOARD →</Text>
           <Text style={styles.savedCity}>B2B</Text>
         </TouchableOpacity>
 
-        {isAuth && (
-          <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-            <Text style={styles.signOutBtnText}>SIGN OUT</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+          <Text style={styles.signOutBtnText}>SIGN OUT</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   row:          { width: '100%', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
   rowLabel:     { ...Type.tag, color: Colors.textMuted },
   rowVal:       { ...Type.label, color: Colors.textPrimary },
-  savedItem:    { width: '100%', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  savedItem:    { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
   savedName:    { ...Type.bodyMedium, color: Colors.textPrimary },
   savedCity:    { ...Type.tag, color: Colors.textSecondary },
   empty:        { ...Type.body, color: Colors.textMuted },
