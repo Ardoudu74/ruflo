@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, ActivityIndicator, Share } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
@@ -14,29 +14,55 @@ import { weatherEmoji } from '../../services/weather';
 
 export default function VenueDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const router  = useRouter();
   const { toggleSaved, savedVenueIds } = useAppStore();
   const venue = VENUES.find(v => v.id === id);
-  if (!venue) return null;
+
+  if (!venue) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.ink, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ ...Type.sectionHead, color: Colors.textPrimary }}>Venue not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={{ ...Type.label, color: Colors.gold }}>← GO BACK</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const isSaved = savedVenueIds.includes(venue.id);
   const h = new Date().getHours();
   const isOpenNow = h >= 22 || h < 6;
+
   const { places, events, weather, loading } = useLiveVenueData(venue);
+
+  const handleShare = () => {
+    Share.share({
+      title: venue.name,
+      message: `Check out ${venue.name} in ${venue.city} on NightOut! ${venue.neighborhood} · ${venue.genres.slice(0,2).join(' · ')}`,
+    });
+  };
+
   const rating = places?.googleRating ?? venue.googleRating;
   const openNow = places?.openNow ?? isOpenNow;
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.ink }}>
       <LinearGradient colors={['#1a0a2e', Colors.ink]} style={StyleSheet.absoluteFill} />
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-          <Text style={styles.backText}>← BACK</Text>
-        </TouchableOpacity>
+        <View style={styles.topNav}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.backText}>← BACK</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleShare}>
+            <Text style={styles.shareText}>SHARE ↗</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.logoBox}>
           <Text style={styles.logoInitial}>{venue.name[0]}</Text>
         </View>
+
         <Text style={styles.name}>{venue.name}</Text>
         <Text style={styles.neighborhood}>{venue.neighborhood.toUpperCase()} · {venue.city.toUpperCase()}</Text>
 
@@ -45,7 +71,8 @@ export default function VenueDetail() {
           {weather && (
             <View style={styles.weatherBadge}>
               <Text style={styles.weatherText}>
-                {weatherEmoji(weather.icon)} {weather.tempC}°C{weather.isBeachWeather ? ' · BEACH WEATHER' : ''}
+                {weatherEmoji(weather.icon)} {weather.tempC}°C
+                {weather.isBeachWeather ? ' · BEACH WEATHER' : ''}
               </Text>
             </View>
           )}
@@ -57,14 +84,14 @@ export default function VenueDetail() {
         </View>
 
         <View style={styles.grid}>
-          {([
+          {[
             ['RATING',    loading ? '...' : `⭐ ${rating}`],
             ['CAPACITY',  `${venue.capacity.toLocaleString()} ppl`],
             ['AUDIENCE',  venue.audience.toUpperCase()],
             ['DRESS CODE',venue.dressCode],
             ['HOURS',     venue.openingHours],
             ['ENTRY',     venue.entryFee ?? venue.priceRange],
-          ] as [string, string][]).map(([k, v]) => (
+          ].map(([k, v]) => (
             <View key={k} style={styles.gridItem}>
               <Text style={styles.gridKey}>{k}</Text>
               <Text style={styles.gridVal}>{v}</Text>
@@ -73,7 +100,7 @@ export default function VenueDetail() {
           {places?.phone && (
             <View style={styles.gridItem}>
               <Text style={styles.gridKey}>PHONE</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(`tel:${places.phone}`)  }>
+              <TouchableOpacity onPress={() => Linking.openURL(`tel:${places.phone}`)}>
                 <Text style={[styles.gridVal, { color: Colors.gold }]}>{places.phone}</Text>
               </TouchableOpacity>
             </View>
@@ -115,7 +142,9 @@ export default function VenueDetail() {
         {places?.hours && places.hours.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>OPENING HOURS</Text>
-            {places.hours.map(h => <Text key={h} style={styles.hourLine}>{h}</Text>)}
+            {places.hours.map(h => (
+              <Text key={h} style={styles.hourLine}>{h}</Text>
+            ))}
           </View>
         )}
 
@@ -123,7 +152,10 @@ export default function VenueDetail() {
           <Text style={styles.ctaBtnText}>GET TICKETS →</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.saveBtn, isSaved && styles.saveBtnActive]} onPress={() => toggleSaved(venue.id)}>
+        <TouchableOpacity
+          style={[styles.saveBtn, isSaved && styles.saveBtnActive]}
+          onPress={() => toggleSaved(venue.id)}
+        >
           <Text style={[styles.saveBtnText, isSaved && { color: Colors.gold }]}>
             {isSaved ? '♥ SAVED' : '♡ SAVE VENUE'}
           </Text>
@@ -135,8 +167,9 @@ export default function VenueDetail() {
 
 const styles = StyleSheet.create({
   content:      { paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: 120, gap: Spacing.xl, alignItems: 'center' },
-  back:         { alignSelf: 'flex-start' },
+  topNav:       { flexDirection: 'row', justifyContent: 'space-between', alignSelf: 'stretch' },
   backText:     { ...Type.label, color: Colors.gold },
+  shareText:    { ...Type.label, color: Colors.textSecondary },
   logoBox:      { width: 80, height: 80, borderRadius: Radius.xl, backgroundColor: Colors.heroPurple, borderWidth: 1, borderColor: Colors.gold + '44', alignItems: 'center', justifyContent: 'center' },
   logoInitial:  { ...Type.sectionHead, color: Colors.gold, fontSize: 36 },
   name:         { ...Type.heroTitle, color: Colors.textPrimary, textAlign: 'center', fontSize: 36 },

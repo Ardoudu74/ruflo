@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   FlatList, Alert, Modal, TextInput, ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/Colors';
 import { Type } from '../../constants/Typography';
@@ -13,12 +14,16 @@ import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useStoryStore } from '../../store/useStoryStore';
 import { Story } from '../../types/story';
+import type { Venue } from '../../types';
 import { verifyUserAtVenue, buildStory, containsProfanity } from '../../services/stories';
 import { VENUES } from '../../data/venues';
+
+const { width: W, height: H } = Dimensions.get('window');
 
 function StoryCard({ story, onReport }: { story: Story; onReport: (id: string) => void }) {
   const minutesLeft = Math.max(0, Math.round((story.expiresAt - Date.now()) / 60000));
   const hoursLeft = minutesLeft >= 60 ? `${Math.floor(minutesLeft / 60)}h` : `${minutesLeft}m`;
+  const urgentColor = minutesLeft < 30 ? Colors.pink : minutesLeft < 60 ? '#FFB800' : Colors.textMuted;
 
   return (
     <View style={card.root}>
@@ -37,14 +42,17 @@ function StoryCard({ story, onReport }: { story: Story; onReport: (id: string) =
               <Text style={card.geoText}>📍 VERIFIED</Text>
             </View>
           )}
-          <Text style={card.expires}>⏱ {hoursLeft}</Text>
+          <Text style={[card.expires, { color: urgentColor }]}>⏱ {hoursLeft}</Text>
         </View>
       </View>
+
       {story.caption ? <Text style={card.caption}>{story.caption}</Text> : null}
+
       <View style={card.videoPlaceholder}>
         <Text style={card.playIcon}>▶</Text>
         <Text style={card.videoHint}>VIDEO · {story.views} VIEWS</Text>
       </View>
+
       <TouchableOpacity style={card.reportBtn} onPress={() => onReport(story.id)}>
         <Text style={card.reportText}>REPORT</Text>
       </TouchableOpacity>
@@ -53,6 +61,7 @@ function StoryCard({ story, onReport }: { story: Story; onReport: (id: string) =
 }
 
 export default function StoriesTab() {
+  const router = useRouter();
   const { selectedCityId } = useAppStore();
   const { uid, profile } = useAuthStore();
   const { forCity, add, report, purgeExpired } = useStoryStore();
@@ -77,30 +86,58 @@ export default function StoriesTab() {
       quality: 0.7,
       videoMaxDuration: 30,
     });
-    if (!res.canceled && res.assets[0]) setVideoUri(res.assets[0].uri);
+    if (!res.canceled && res.assets[0]) {
+      setVideoUri(res.assets[0].uri);
+    }
   };
 
   const handlePost = async () => {
-    if (!uid || uid === 'guest') { Alert.alert('Sign in required', 'You must be signed in to post stories.'); return; }
-    if (!videoUri) { Alert.alert('No video', 'Please select a video first.'); return; }
-    if (!selectedVenueId) { Alert.alert('Select venue', 'Choose which venue you are at.'); return; }
-    if (containsProfanity(caption)) { Alert.alert('Caption rejected', 'Your caption contains inappropriate language.'); return; }
+    if (!uid || uid === 'guest') {
+      Alert.alert('Sign in required', 'You must be signed in to post stories.');
+      return;
+    }
+    if (!videoUri) {
+      Alert.alert('No video', 'Please select a video first.');
+      return;
+    }
+    if (!selectedVenueId) {
+      Alert.alert('Select venue', 'Choose which venue you are at.');
+      return;
+    }
+    if (containsProfanity(caption)) {
+      Alert.alert('Caption rejected', 'Your caption contains inappropriate language.');
+      return;
+    }
+
     const venue = VENUES.find(v => v.id === selectedVenueId);
     if (!venue) return;
+
     setUploading(true);
     const { verified, distanceM } = await verifyUserAtVenue(venue);
     if (!verified && distanceM >= 0) {
-      Alert.alert('Too far from venue', `You are ${distanceM}m away. Must be within 300m of ${venue.name} to post a geo-verified story.`, [
-        { text: 'Post anyway (unverified)', onPress: () => submitStory(venue, false) },
-        { text: 'Cancel', style: 'cancel', onPress: () => setUploading(false) },
-      ]);
+      Alert.alert(
+        'Too far from venue',
+        `You are ${distanceM}m away. Must be within 300m of ${venue.name} to post a geo-verified story.`,
+        [
+          { text: 'Post anyway (unverified)', onPress: () => submitStory(venue, false) },
+          { text: 'Cancel', style: 'cancel', onPress: () => setUploading(false) },
+        ]
+      );
       return;
     }
     submitStory(venue, verified);
   };
 
-  const submitStory = async (venue: any, geoVerified: boolean) => {
-    const story = buildStory(uid!, profile?.displayName ?? 'Night Walker', venue, videoUri!, caption, 0, 0, geoVerified);
+  const submitStory = async (venue: Venue, geoVerified: boolean) => {
+    const story = buildStory(
+      uid!,
+      profile?.displayName ?? 'Night Walker',
+      venue,
+      videoUri!,
+      caption,
+      0, 0,
+      geoVerified,
+    );
     add(story);
     setUploading(false);
     setShowUpload(false);
@@ -121,6 +158,7 @@ export default function StoriesTab() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.ink }}>
       <LinearGradient colors={[Colors.ink, '#000']} style={StyleSheet.absoluteFill} />
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>STORIES</Text>
@@ -129,39 +167,74 @@ export default function StoriesTab() {
             <Text style={styles.postBtnText}>+ POST</Text>
           </TouchableOpacity>
         </View>
+
         {cityStories.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🌙</Text>
             <Text style={styles.emptyTitle}>NO STORIES YET</Text>
-            <Text style={styles.emptyBody}>Be the first to post from a venue tonight.</Text>
+            <Text style={styles.emptyBody}>Be the first to post from a venue in {selectedCityId.toUpperCase()} tonight.</Text>
           </View>
-        ) : cityStories.map(s => <StoryCard key={s.id} story={s} onReport={handleReport} />)}
+        ) : (
+          cityStories.map(s => (
+            <StoryCard key={s.id} story={s} onReport={handleReport} />
+          ))
+        )}
       </ScrollView>
 
-      <Modal visible={showUpload} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowUpload(false)}>
+      <Modal
+        visible={showUpload}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowUpload(false)}
+      >
         <View style={modal.root}>
           <LinearGradient colors={['#12001a', '#000']} style={StyleSheet.absoluteFill} />
           <Text style={modal.title}>POST STORY</Text>
           <Text style={modal.label}>VENUE</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={modal.venueScroll}>
             {cityVenues.map(v => (
-              <TouchableOpacity key={v.id} style={[modal.venueChip, selectedVenueId === v.id && modal.venueChipActive]} onPress={() => setSelectedVenueId(v.id)}>
-                <Text style={[modal.venueChipText, selectedVenueId === v.id && { color: Colors.ink }]}>{v.name}</Text>
+              <TouchableOpacity
+                key={v.id}
+                style={[modal.venueChip, selectedVenueId === v.id && modal.venueChipActive]}
+                onPress={() => setSelectedVenueId(v.id)}
+              >
+                <Text style={[modal.venueChipText, selectedVenueId === v.id && { color: Colors.ink }]}>
+                  {v.name}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
+
           <Text style={modal.label}>VIDEO (MAX 30s)</Text>
           <TouchableOpacity style={modal.videoPick} onPress={handlePickVideo}>
             <Text style={modal.videoPickText}>{videoUri ? '✓ VIDEO SELECTED' : 'SELECT VIDEO'}</Text>
           </TouchableOpacity>
+
           <Text style={modal.label}>CAPTION (OPTIONAL)</Text>
-          <TextInput style={modal.input} value={caption} onChangeText={setCaption} placeholder="What's the vibe?" placeholderTextColor={Colors.textMuted} maxLength={120} multiline />
+          <TextInput
+            style={modal.input}
+            value={caption}
+            onChangeText={setCaption}
+            placeholder="What's the vibe?"
+            placeholderTextColor={Colors.textMuted}
+            maxLength={120}
+            multiline
+          />
           <Text style={modal.charCount}>{120 - caption.length} CHARS LEFT</Text>
+
           <View style={modal.geoNote}>
             <Text style={modal.geoNoteText}>📍 Your location will be checked to verify you're at the venue (within 300m). Location is NOT stored.</Text>
           </View>
-          <TouchableOpacity style={[modal.submitBtn, uploading && { opacity: 0.5 }]} onPress={handlePost} disabled={uploading}>
-            {uploading ? <ActivityIndicator color={Colors.ink} /> : <Text style={modal.submitBtnText}>POST TO STORIES</Text>}
+
+          <TouchableOpacity
+            style={[modal.submitBtn, uploading && { opacity: 0.5 }]}
+            onPress={handlePost}
+            disabled={uploading}
+          >
+            {uploading
+              ? <ActivityIndicator color={Colors.ink} />
+              : <Text style={modal.submitBtnText}>POST TO STORIES</Text>
+            }
           </TouchableOpacity>
           <TouchableOpacity style={modal.cancelBtn} onPress={() => setShowUpload(false)}>
             <Text style={modal.cancelText}>CANCEL</Text>
