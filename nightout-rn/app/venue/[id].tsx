@@ -33,8 +33,6 @@ export default function VenueDetail() {
   }
 
   const isSaved = savedVenueIds.includes(venue.id);
-  const hour = new Date().getHours();
-  const isOpenNow = hour >= 22 || hour < 6;
 
   const handleShare = () => {
     Share.share({
@@ -44,7 +42,7 @@ export default function VenueDetail() {
   };
 
   const rating = places?.googleRating ?? venue.googleRating;
-  const openNow = places?.openNow ?? isOpenNow;
+  const openNow = places?.openNow ?? venue.isOpen;
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.ink }}>
@@ -101,7 +99,7 @@ export default function VenueDetail() {
           {places?.phone && (
             <View style={styles.gridItem}>
               <Text style={styles.gridKey}>PHONE</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(`tel:${places.phone}`)}>  
+              <TouchableOpacity onPress={() => Linking.openURL(`tel:${places.phone}`)}>
                 <Text style={[styles.gridVal, { color: Colors.gold }]}>{places.phone}</Text>
               </TouchableOpacity>
             </View>

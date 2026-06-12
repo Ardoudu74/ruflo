@@ -11,7 +11,7 @@ import { Spacing, Radius } from '../../constants/Spacing';
 import { VENUES } from '../../data/venues';
 import { ticketsForVenue, formatPrice } from '../../data/tickets';
 import { createPaymentIntent, payWithApplePay, payWithCard, finalizeTicket, platformFeeCents } from '../../services/payments';
-import { useAuthStore, selectAgeVerified } from '../../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { requireAgeVerification } from '../../services/ageGate';
 import type { TicketType } from '../../types/ticket';
 
@@ -20,8 +20,6 @@ export default function Checkout() {
   const router  = useRouter();
   const venue   = VENUES.find(v => v.id === venueId);
   const types   = ticketsForVenue(venueId ?? '');
-  const ageOk   = useAuthStore(selectAgeVerified);
-
   // All hooks must be declared before any early returns
   const [selected, setSelected] = useState<TicketType | null>(null);
   const [qty, setQty]           = useState(1);

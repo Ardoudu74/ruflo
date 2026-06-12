@@ -1,15 +1,23 @@
 /**
  * Safe Night service.
- * SMS calls MUST go through your backend (Firebase Cloud Function).
- * NEVER expose Twilio credentials client-side.
+ *
+ * Location: expo-location (already in package.json)
+ * SMS: Twilio REST API (requires EXPO_PUBLIC_TWILIO_ACCOUNT_SID,
+ *      EXPO_PUBLIC_TWILIO_AUTH_TOKEN set server-side — never expose in client)
+ *
+ * Production note: Twilio calls must go through your own backend endpoint
+ * (e.g. a Firebase Cloud Function) to keep credentials server-side.
  */
 
 import * as Location from 'expo-location';
 import { Linking, Alert } from 'react-native';
 import { useSafeNightStore } from '../store/useSafeNightStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { scheduleSafeNightReminder, cancelAllNotifications } from './notifications';
 
 let locationSubscription: Location.LocationSubscription | null = null;
+
+// ── Location tracking ─────────────────────────────────────────────────
 
 export async function startLocationSharing(): Promise<boolean> {
   const store = useSafeNightStore.getState();
@@ -22,6 +30,7 @@ export async function startLocationSharing(): Promise<boolean> {
   const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
   if (bgStatus !== 'granted') {
     store.setLocError('Background location needed for Safe Night');
+    // continue with foreground only
   }
 
   locationSubscription = await Location.watchPositionAsync(
@@ -34,6 +43,7 @@ export async function startLocationSharing(): Promise<boolean> {
 
   store.enable();
   scheduleAutoDisable();
+  scheduleSafeNightReminder().catch(() => {});
   return true;
 }
 
@@ -41,7 +51,10 @@ export function stopLocationSharing(): void {
   locationSubscription?.remove();
   locationSubscription = null;
   useSafeNightStore.getState().disable();
+  cancelAllNotifications().catch(() => {});
 }
+
+// ── Auto-disable at 06:00 ───────────────────────────────────────────────
 
 function scheduleAutoDisable(): void {
   const now  = new Date();
@@ -52,15 +65,30 @@ function scheduleAutoDisable(): void {
   setTimeout(() => stopLocationSharing(), ms);
 }
 
+// ── SMS via backend ─────────────────────────────────────────────────────────
+
 async function sendLocationToContact(lat: number, lng: number): Promise<void> {
   const profile = useAuthStore.getState().profile;
   const contact = profile?.emergencyContact;
   if (!contact) return;
+
   const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
   const body    = `[NightOut Safe Night] ${profile.displayName} is here: ${mapsUrl}`;
-  // Production: POST to your Firebase Function /api/sms
+
+  /**
+   * Production — call your Firebase Function:
+   * await fetch('https://your-backend.com/api/sms', {
+   *   method: 'POST',
+   *   headers: { 'Content-Type': 'application/json' },
+   *   body: JSON.stringify({ to: contact.phone, body }),
+   * });
+   */
+
+  // Dev stub: log only
   console.log('[SafeNight SMS stub]', contact.phone, body);
 }
+
+// ── SOS ───────────────────────────────────────────────────────────────────────
 
 export async function triggerSOS(): Promise<void> {
   const store   = useSafeNightStore.getState();
@@ -71,12 +99,21 @@ export async function triggerSOS(): Promise<void> {
 
   store.triggerSOS();
 
+  // 1. SMS emergency contact
   if (contact) {
     const mapsUrl = lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : '(location unavailable)';
     const body    = `🆘 SOS from ${profile?.displayName ?? 'NightOut user'} — ${mapsUrl}`;
+    /**
+     * Production: call backend /api/sos
+     * await fetch('https://your-backend.com/api/sos', {
+     *   method: 'POST',
+     *   body: JSON.stringify({ to: contact.phone, body }),
+     * });
+     */
     console.log('[SOS SMS stub]', contact.phone, body);
   }
 
+  // 2. Prompt user to call local emergency number
   Alert.alert(
     '⚡ SOS Sent',
     `Message sent to ${contact?.name ?? 'your emergency contact'}.\n\nCall emergency services?`,

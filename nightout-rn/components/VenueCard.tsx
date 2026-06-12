@@ -63,11 +63,6 @@ export function VenueCard({ venue, index, isTrending = false, onPress }: Props) 
     venue.dressCode.split(' ')[0],
   ].slice(0, 3);
 
-  const isOpenNow = (() => {
-    const h = new Date().getHours();
-    return h >= 22 || h < 6;
-  })();
-
   return (
     <Animated.View style={{ opacity, transform: [{ translateY: fadeY }, { scale }] }}>
       <TouchableOpacity
@@ -105,7 +100,7 @@ export function VenueCard({ venue, index, isTrending = false, onPress }: Props) 
             <View style={styles.tags}>
               {tags.map(t => <Chip key={t} label={t.toUpperCase()} />)}
             </View>
-            {isOpenNow && <OpenNowBadge />}
+            {venue.isOpen && <OpenNowBadge />}
           </View>
 
           {/* Bottom */}
