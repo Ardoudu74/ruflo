@@ -139,7 +139,7 @@ export function finalizeTicket(
 function nextWeekendNight(): string {
   const d = new Date();
   // Find the next Saturday (day 6); if already Saturday, use today
-  const daysUntilSat = (6 - d.getDay() + 7) % 7 || 7;
+  const daysUntilSat = (6 - d.getDay() + 7) % 7;
   d.setDate(d.getDate() + daysUntilSat);
   d.setHours(23, 0, 0, 0);
   return d.toISOString();

@@ -84,7 +84,7 @@ export default function VenueDetail() {
 
         <View style={styles.grid}>
           {[
-            ['RATING',    loading ? '...' : `⭐ ${rating}`],
+            ['RATING',    loading ? '...' : (rating > 0 ? `⭐ ${rating.toFixed(1)}` : 'N/A')],
             ['CAPACITY',  `${venue.capacity.toLocaleString()} ppl`],
             ['AUDIENCE',  venue.audience.toUpperCase()],
             ['DRESS CODE',venue.dressCode],
