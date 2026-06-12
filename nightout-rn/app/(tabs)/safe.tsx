@@ -41,12 +41,17 @@ export default function SafeNightTab() {
       return;
     }
     setLoading(true);
-    if (sharingActive) {
-      stopLocationSharing();
-    } else {
-      await startLocationSharing();
+    try {
+      if (sharingActive) {
+        stopLocationSharing();
+      } else {
+        await startLocationSharing();
+      }
+    } catch {
+      Alert.alert('Location error', 'Could not start location sharing. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSOS = () => {

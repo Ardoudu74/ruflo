@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, FlatList, RefreshControl } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Dimensions, Modal, FlatList, RefreshControl,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
@@ -23,16 +26,17 @@ function useIsLateNight() {
 export default function HomeTab() {
   const router = useRouter();
   const { selectedCityId, venues, setCity } = useAppStore();
-  const city    = CITY_MAP[selectedCityId];
+  const city    = CITY_MAP[selectedCityId] ?? CITY_MAP['ibiza'];
   const accent  = Colors.cityAccents[selectedCityId] ?? Colors.gold;
   const isNight = useIsLateNight();
   const [showCityModal, setShowCityModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const trending  = trendingVenues(selectedCityId);
-  const allVenues = useMatchScores();
-  const [weather, setWeather] = useState<WeatherData | null>(null);
 
+  const trending    = trendingVenues(selectedCityId);
+  const allVenues   = useMatchScores();
+
+  const [weather, setWeather] = useState<WeatherData | null>(null);
   useEffect(() => {
     const c = CITY_MAP[selectedCityId];
     if (c) fetchWeather(c.latitude, c.longitude).then(setWeather);
@@ -47,11 +51,25 @@ export default function HomeTab() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={[Colors.ink, '#12001a', '#000000']} style={StyleSheet.absoluteFill} />
-      <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}
+      <LinearGradient
+        colors={[Colors.ink, '#12001a', '#000000']}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.gold} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.gold}
+          />
+        }
       >
+        {/* Header */}
         <TouchableOpacity onPress={() => setShowCityModal(true)} style={styles.header}>
           <View style={styles.eyebrowRow}>
             <Text style={[styles.eyebrow, { color: isNight ? Colors.pink : Colors.textSecondary }]}>
@@ -59,7 +77,8 @@ export default function HomeTab() {
             </Text>
             {weather && (
               <Text style={styles.weatherLabel}>
-                {weatherEmoji(weather.icon)} {weather.tempC}°C{weather.isBeachWeather ? ' 🏖️' : ''}
+                {weatherEmoji(weather.icon)} {weather.tempC}°C
+                {weather.isBeachWeather ? ' 🏖️' : ''}
               </Text>
             )}
           </View>
@@ -69,8 +88,16 @@ export default function HomeTab() {
           </View>
         </TouchableOpacity>
 
-        <CityHero cityName={city.name} cityId={selectedCityId} accentColor={accent} flag={city.flag} venueCount={allVenues.length} />
+        {/* Hero */}
+        <CityHero
+          cityName={city.name}
+          cityId={selectedCityId}
+          accentColor={accent}
+          flag={city.flag}
+          venueCount={allVenues.length}
+        />
 
+        {/* Trending */}
         {trending.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -78,25 +105,45 @@ export default function HomeTab() {
               <Text style={styles.aiLabel}>AI CURATED</Text>
             </View>
             {trending.map((v, i) => (
-              <VenueCard key={v.id} venue={v} index={i} isTrending={i === 0} onPress={() => router.push(`/venue/${v.id}`)} />
+              <VenueCard
+                key={v.id}
+                venue={v}
+                index={i}
+                isTrending={i === 0}
+                onPress={() => router.push(`/venue/${v.id}`)}
+              />
             ))}
           </View>
         )}
 
+        {/* All venues */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ALL VENUES</Text>
           {allVenues.map((v, i) => (
-            <VenueCard key={v.id} venue={v} index={i + trending.length} onPress={() => router.push(`/venue/${v.id}`)} />
+            <VenueCard
+              key={v.id}
+              venue={v}
+              index={i + trending.length}
+              onPress={() => router.push(`/venue/${v.id}`)}
+            />
           ))}
         </View>
       </ScrollView>
 
-      <Modal visible={showCityModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowCityModal(false)}>
+      {/* City picker modal */}
+      <Modal
+        visible={showCityModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCityModal(false)}
+      >
         <View style={modal.root}>
           <LinearGradient colors={['#12001a', '#000']} style={StyleSheet.absoluteFill} />
           <Text style={modal.title}>CHOOSE CITY</Text>
           <FlatList
-            data={CITIES} keyExtractor={c => c.id} numColumns={2}
+            data={CITIES}
+            keyExtractor={c => c.id}
+            numColumns={2}
             columnWrapperStyle={{ gap: 10 }}
             contentContainerStyle={{ gap: 10, paddingBottom: 40 }}
             renderItem={({ item: c }) => {
@@ -120,27 +167,31 @@ export default function HomeTab() {
 }
 
 const styles = StyleSheet.create({
-  root:         { flex: 1 },
-  scroll:       { flex: 1 },
-  content:      { paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: 120, gap: Spacing.xl },
+  root:    { flex: 1 },
+  scroll:  { flex: 1 },
+  content: { paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: 120, gap: Spacing.xl },
   header:       {},
   eyebrowRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   eyebrow:      { ...Type.label },
   weatherLabel: { ...Type.tag, color: Colors.gold },
-  cityRow:      { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
-  cityName:     { ...Type.heroCity, color: Colors.textPrimary, fontSize: 52 },
-  chevron:      { ...Type.sectionHead, fontSize: 22 },
-  section:      { gap: Spacing.md },
-  sectionHeader:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { ...Type.label, color: Colors.gold, fontSize: 15 },
-  aiLabel:      { ...Type.tag, color: Colors.textMuted },
+  cityRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
+  cityName:{ ...Type.heroCity, color: Colors.textPrimary, fontSize: 52 },
+  chevron: { ...Type.sectionHead, fontSize: 22 },
+  section: { gap: Spacing.md },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle:  { ...Type.label, color: Colors.gold, fontSize: 15 },
+  aiLabel:       { ...Type.tag, color: Colors.textMuted },
 });
 
 const modal = StyleSheet.create({
   root:       { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: 40 },
   title:      { ...Type.sectionHead, color: Colors.textPrimary, marginBottom: Spacing.xl },
-  cityBtn:    { flex: 1, padding: Spacing.lg, borderRadius: Radius.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: Colors.cardBase },
-  flag:       { fontSize: 24, marginBottom: 4 },
-  cityBtnName:{ ...Type.venueName, color: Colors.textPrimary, fontSize: 16 },
-  country:    { ...Type.tag, color: Colors.textSecondary, marginTop: 2 },
+  cityBtn:    {
+    flex: 1, padding: Spacing.lg, borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: Colors.cardBase,
+  },
+  flag:        { fontSize: 24, marginBottom: 4 },
+  cityBtnName: { ...Type.venueName, color: Colors.textPrimary, fontSize: 16 },
+  country:     { ...Type.tag, color: Colors.textSecondary, marginTop: 2 },
 });
