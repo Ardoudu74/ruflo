@@ -39,10 +39,8 @@ export const useAppStore = create<AppStore>()(
     {
       name:    'nightout-app',
       storage: createJSONStorage(() => secureStorage),
-      // venues is derived from selectedCityId — don't persist
       partialize: (s) => ({ selectedCityId: s.selectedCityId, savedVenueIds: s.savedVenueIds }),
       onRehydrateStorage: () => (state) => {
-        // Re-derive venues from the persisted city on hydration
         if (state) {
           state.venues = venuesByCity(state.selectedCityId);
         }

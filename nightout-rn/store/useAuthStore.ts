@@ -39,13 +39,11 @@ export const useAuthStore = create<AuthStore>()(
     {
       name:    'nightout-auth',
       storage: createJSONStorage(() => secureStorage),
-      // Don't persist transient UI state
       partialize: (s) => ({ uid: s.uid, profile: s.profile, provider: s.provider }),
     }
   )
 );
 
-// ── selectors ──────────────────────────────────────────────────────────────────────
 export const selectIsAuthenticated = (s: AuthStore) => !!s.uid && s.uid !== 'guest';
 export const selectHasProfile      = (s: AuthStore) => !!s.profile?.genres?.length;
 export const selectAgeVerified     = (s: AuthStore) => !!s.profile?.ageVerified;

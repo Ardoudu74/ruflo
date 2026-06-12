@@ -1,12 +1,3 @@
-/**
- * Zustand persist storage backends.
- *
- * secureStorage  — expo-secure-store (encrypted, ~2KB limit per key)
- *                  Use for: auth state, app preferences
- * asyncStorage   — @react-native-async-storage/async-storage (larger, unencrypted)
- *                  Use for: tickets, stories
- */
-
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StateStorage } from 'zustand/middleware';

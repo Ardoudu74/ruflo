@@ -1,8 +1,3 @@
-// Clash Display = titles/city/venue names (700/900)
-// Bebas Neue = UI labels, tags, buttons, numbers
-// Inter = body text (400/500)
-// System fonts used as fallbacks when custom fonts aren't loaded
-
 export const Fonts = {
   clashDisplay: {
     regular:    'ClashDisplay-Regular',
