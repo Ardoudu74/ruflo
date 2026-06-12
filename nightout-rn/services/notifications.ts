@@ -1,3 +1,9 @@
+/**
+ * Push notifications — expo-notifications.
+ * Add "expo-notifications" to package.json and configure in app.json:
+ *   "plugins": [..., ["expo-notifications", { "icon": "./assets/notification-icon.png", "color": "#FFB800" }]]
+ */
+
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -18,8 +24,10 @@ export async function requestNotificationPermissions(): Promise<boolean> {
       lightColor: '#FFB800',
     });
   }
+
   const { status: existing } = await Notifications.getPermissionsAsync();
   if (existing === 'granted') return true;
+
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
@@ -32,7 +40,7 @@ export async function scheduleTicketConfirmation(venueName: string, eventDate: s
       data: { type: 'ticket_confirmed' },
       color: '#FFB800',
     },
-    trigger: null,
+    trigger: null, // immediate
   });
 }
 
@@ -40,6 +48,7 @@ export async function scheduleSafeNightReminder(): Promise<string> {
   const trigger = new Date();
   trigger.setHours(5, 45, 0, 0);
   if (trigger <= new Date()) trigger.setDate(trigger.getDate() + 1);
+
   return Notifications.scheduleNotificationAsync({
     content: {
       title: '🌙 SAFE NIGHT',
@@ -48,6 +57,10 @@ export async function scheduleSafeNightReminder(): Promise<string> {
     },
     trigger,
   });
+}
+
+export async function cancelNotification(id: string): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(id);
 }
 
 export async function cancelAllNotifications(): Promise<void> {

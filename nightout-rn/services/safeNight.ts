@@ -13,11 +13,12 @@ import * as Location from 'expo-location';
 import { Linking, Alert } from 'react-native';
 import { useSafeNightStore } from '../store/useSafeNightStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { scheduleSafeNightReminder, cancelAllNotifications } from './notifications';
+import { scheduleSafeNightReminder, cancelNotification } from './notifications';
 
 let locationSubscription: Location.LocationSubscription | null = null;
+let safeNightNotificationId: string | null = null;
 
-// ── Location tracking ─────────────────────────────────────────────────
+// ── Location tracking ─────────────────────────────────────────────────────
 
 export async function startLocationSharing(): Promise<boolean> {
   const store = useSafeNightStore.getState();
@@ -43,7 +44,7 @@ export async function startLocationSharing(): Promise<boolean> {
 
   store.enable();
   scheduleAutoDisable();
-  scheduleSafeNightReminder().catch(() => {});
+  scheduleSafeNightReminder().then(id => { safeNightNotificationId = id; }).catch(() => {});
   return true;
 }
 
@@ -51,10 +52,13 @@ export function stopLocationSharing(): void {
   locationSubscription?.remove();
   locationSubscription = null;
   useSafeNightStore.getState().disable();
-  cancelAllNotifications().catch(() => {});
+  if (safeNightNotificationId) {
+    cancelNotification(safeNightNotificationId).catch(() => {});
+    safeNightNotificationId = null;
+  }
 }
 
-// ── Auto-disable at 06:00 ───────────────────────────────────────────────
+// ── Auto-disable at 06:00 ─────────────────────────────────────────────────
 
 function scheduleAutoDisable(): void {
   const now  = new Date();
@@ -65,7 +69,7 @@ function scheduleAutoDisable(): void {
   setTimeout(() => stopLocationSharing(), ms);
 }
 
-// ── SMS via backend ─────────────────────────────────────────────────────────
+// ── SMS via backend ────────────────────────────────────────────────────────
 
 async function sendLocationToContact(lat: number, lng: number): Promise<void> {
   const profile = useAuthStore.getState().profile;

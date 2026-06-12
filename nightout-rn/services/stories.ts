@@ -24,7 +24,9 @@ export async function verifyUserAtVenue(venue: Venue): Promise<{ verified: boole
 export function nextSixAM(): number {
   const now = new Date();
   const next = new Date(now);
-  if (now.getHours() >= 6) next.setDate(next.getDate() + 1);
+  if (now.getHours() >= 6) {
+    next.setDate(next.getDate() + 1);
+  }
   next.setHours(6, 0, 0, 0);
   return next.getTime();
 }
@@ -61,6 +63,5 @@ export function buildStory(
 
 export function containsProfanity(text: string): boolean {
   const banned = ['fuck', 'shit', 'bitch', 'asshole', 'cunt', 'dick', 'pussy', 'nigger', 'faggot'];
-  const lower = text.toLowerCase();
-  return banned.some(w => lower.includes(w));
+  return banned.some(w => new RegExp(`\\b${w}\\b`, 'i').test(text));
 }
