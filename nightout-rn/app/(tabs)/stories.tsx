@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  FlatList, Alert, Modal, TextInput, ActivityIndicator,
-  Dimensions,
+  Alert, Modal, TextInput, ActivityIndicator,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/Colors';
 import { Type } from '../../constants/Typography';
@@ -17,8 +16,6 @@ import { Story } from '../../types/story';
 import type { Venue } from '../../types';
 import { verifyUserAtVenue, buildStory, containsProfanity } from '../../services/stories';
 import { VENUES } from '../../data/venues';
-
-const { width: W, height: H } = Dimensions.get('window');
 
 function StoryCard({ story, onReport }: { story: Story; onReport: (id: string) => void }) {
   const minutesLeft = Math.max(0, Math.round((story.expiresAt - Date.now()) / 60000));
@@ -61,7 +58,6 @@ function StoryCard({ story, onReport }: { story: Story; onReport: (id: string) =
 }
 
 export default function StoriesTab() {
-  const router = useRouter();
   const { selectedCityId } = useAppStore();
   const { uid, profile } = useAuthStore();
   const { forCity, add, report, purgeExpired } = useStoryStore();
@@ -113,19 +109,24 @@ export default function StoriesTab() {
     if (!venue) return;
 
     setUploading(true);
-    const { verified, distanceM } = await verifyUserAtVenue(venue);
-    if (!verified && distanceM >= 0) {
-      Alert.alert(
-        'Too far from venue',
-        `You are ${distanceM}m away. Must be within 300m of ${venue.name} to post a geo-verified story.`,
-        [
-          { text: 'Post anyway (unverified)', onPress: () => submitStory(venue, false) },
-          { text: 'Cancel', style: 'cancel', onPress: () => setUploading(false) },
-        ]
-      );
-      return;
+    try {
+      const { verified, distanceM } = await verifyUserAtVenue(venue);
+      if (!verified && distanceM >= 0) {
+        Alert.alert(
+          'Too far from venue',
+          `You are ${distanceM}m away. Must be within 300m of ${venue.name} to post a geo-verified story.`,
+          [
+            { text: 'Post anyway (unverified)', onPress: () => submitStory(venue, false) },
+            { text: 'Cancel', style: 'cancel', onPress: () => setUploading(false) },
+          ]
+        );
+        return;
+      }
+      submitStory(venue, verified);
+    } catch {
+      setUploading(false);
+      Alert.alert('Location error', 'Could not verify your location. Please try again.');
     }
-    submitStory(venue, verified);
   };
 
   const submitStory = async (venue: Venue, geoVerified: boolean) => {
@@ -187,6 +188,7 @@ export default function StoriesTab() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowUpload(false)}
       >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={modal.root}>
           <LinearGradient colors={['#12001a', '#000']} style={StyleSheet.absoluteFill} />
           <Text style={modal.title}>POST STORY</Text>
@@ -240,6 +242,7 @@ export default function StoriesTab() {
             <Text style={modal.cancelText}>CANCEL</Text>
           </TouchableOpacity>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
