@@ -18,6 +18,9 @@ export default function VenueDetail() {
   const { toggleSaved, savedVenueIds } = useAppStore();
   const venue = VENUES.find(v => v.id === id);
 
+  // Hook must be called unconditionally — before any early returns
+  const { places, events, weather, loading } = useLiveVenueData(venue);
+
   if (!venue) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.ink, alignItems: 'center', justifyContent: 'center' }}>
@@ -30,10 +33,8 @@ export default function VenueDetail() {
   }
 
   const isSaved = savedVenueIds.includes(venue.id);
-  const h = new Date().getHours();
-  const isOpenNow = h >= 22 || h < 6;
-
-  const { places, events, weather, loading } = useLiveVenueData(venue);
+  const hour = new Date().getHours();
+  const isOpenNow = hour >= 22 || hour < 6;
 
   const handleShare = () => {
     Share.share({
@@ -100,7 +101,7 @@ export default function VenueDetail() {
           {places?.phone && (
             <View style={styles.gridItem}>
               <Text style={styles.gridKey}>PHONE</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(`tel:${places.phone}`)}>
+              <TouchableOpacity onPress={() => Linking.openURL(`tel:${places.phone}`)}>  
                 <Text style={[styles.gridVal, { color: Colors.gold }]}>{places.phone}</Text>
               </TouchableOpacity>
             </View>
@@ -142,8 +143,8 @@ export default function VenueDetail() {
         {places?.hours && places.hours.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>OPENING HOURS</Text>
-            {places.hours.map(h => (
-              <Text key={h} style={styles.hourLine}>{h}</Text>
+            {places.hours.map(line => (
+              <Text key={line} style={styles.hourLine}>{line}</Text>
             ))}
           </View>
         )}

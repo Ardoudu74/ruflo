@@ -10,29 +10,31 @@ import { VenueCard } from '../../components/VenueCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { Genre } from '../../types';
 
-const GENRES: Genre[] = ['Techno','House','Deep House','Tech House','Afro House','Hip-Hop','Latin','Electronic','Commercial','Disco','R&B'];
+const GENRES: Genre[] = [
+  'Techno','House','Deep House','Tech House','Afro House',
+  'Hip-Hop','Latin','Electronic','Commercial','Disco','R&B',
+];
+
 const PRICE_RANGES = ['€','€€','€€€','€€€€'] as const;
 
 export default function DiscoverTab() {
   const router = useRouter();
   const profile = useAuthStore(s => s.profile);
+
   const [query, setQuery]         = useState('');
   const [activeGenre, setGenre]   = useState<Genre | null>(null);
   const [activePrice, setPrice]   = useState<string | null>(null);
   const [openOnly, setOpenOnly]   = useState(false);
   const [showMatches, setMatches] = useState(false);
-  const h = new Date().getHours();
-  const isOpenNow = h >= 22 || h < 6;
 
   const results = useMemo(() => {
     return VENUES.filter(v => {
-      if (!v.isOpen) return false;
       const q = query.toLowerCase();
       const matchQ = !q || v.name.toLowerCase().includes(q) || v.city.includes(q) || v.neighborhood.toLowerCase().includes(q);
       const matchG = !activeGenre || v.genres.includes(activeGenre);
       const matchP = !activePrice || v.priceRange === activePrice;
-      const matchOpen = !openOnly || isOpenNow;
-      const matchMe = !showMatches || !profile?.genres?.length || v.genres.some(g => profile.genres.includes(g as Genre));
+      const matchOpen = !openOnly || v.isOpen;
+      const matchMe = !showMatches || !(profile?.genres?.length) || v.genres.some(g => profile!.genres!.includes(g as Genre));
       return matchQ && matchG && matchP && matchOpen && matchMe;
     }).slice(0, 40);
   }, [query, activeGenre, activePrice, openOnly, showMatches, profile?.genres]);
@@ -43,33 +45,68 @@ export default function DiscoverTab() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>DISCOVER</Text>
         <Text style={styles.count}>{results.length} VENUES</Text>
+
+        {/* Search */}
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>⊕</Text>
-          <TextInput style={styles.searchInput} placeholder="Search venue, city or vibe…" placeholderTextColor={Colors.textMuted} value={query} onChangeText={setQuery} returnKeyType="search" />
-          {query.length > 0 && <TouchableOpacity onPress={() => setQuery('')}><Text style={styles.clearBtn}>✕</Text></TouchableOpacity>}
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search venue, city or vibe…"
+            placeholderTextColor={Colors.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            returnKeyType="search"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')}>
+              <Text style={styles.clearBtn}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {/* Toggle row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.toggleScroll}>
-          <TouchableOpacity style={[styles.toggleChip, openOnly && styles.toggleActive]} onPress={() => setOpenOnly(v => !v)}>
+          <TouchableOpacity
+            style={[styles.toggleChip, openOnly && styles.toggleActive]}
+            onPress={() => setOpenOnly(v => !v)}
+          >
             <Text style={[styles.toggleText, openOnly && { color: Colors.ink }]}>● OPEN NOW</Text>
           </TouchableOpacity>
           {profile?.genres?.length > 0 && (
-            <TouchableOpacity style={[styles.toggleChip, showMatches && styles.toggleActive]} onPress={() => setMatches(v => !v)}>
+            <TouchableOpacity
+              style={[styles.toggleChip, showMatches && styles.toggleActive]}
+              onPress={() => setMatches(v => !v)}
+            >
               <Text style={[styles.toggleText, showMatches && { color: Colors.ink }]}>♥ MY TASTE</Text>
             </TouchableOpacity>
           )}
           {PRICE_RANGES.map(p => (
-            <TouchableOpacity key={p} style={[styles.toggleChip, activePrice === p && styles.priceActive]} onPress={() => setPrice(activePrice === p ? null : p)}>
+            <TouchableOpacity
+              key={p}
+              style={[styles.toggleChip, activePrice === p && styles.priceActive]}
+              onPress={() => setPrice(activePrice === p ? null : p)}
+            >
               <Text style={[styles.toggleText, activePrice === p && { color: Colors.gold }]}>{p}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Genre filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.genreScroll}>
           {GENRES.map(g => (
-            <TouchableOpacity key={g} style={[styles.genreChip, activeGenre === g && styles.genreActive]} onPress={() => setGenre(activeGenre === g ? null : g)}>
-              <Text style={[styles.genreLabel, activeGenre === g && { color: Colors.ink }]}>{g.toUpperCase()}</Text>
+            <TouchableOpacity
+              key={g}
+              style={[styles.genreChip, activeGenre === g && styles.genreActive]}
+              onPress={() => setGenre(activeGenre === g ? null : g)}
+            >
+              <Text style={[styles.genreLabel, activeGenre === g && { color: Colors.ink }]}>
+                {g.toUpperCase()}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Results */}
         {results.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No venues match your filters.</Text>
@@ -78,7 +115,9 @@ export default function DiscoverTab() {
             </TouchableOpacity>
           </View>
         ) : (
-          results.map((v, i) => <VenueCard key={v.id} venue={v} index={i} onPress={() => router.push(`/venue/${v.id}`)} />)
+          results.map((v, i) => (
+            <VenueCard key={v.id} venue={v} index={i} onPress={() => router.push(`/venue/${v.id}`)} />
+          ))
         )}
       </ScrollView>
     </View>

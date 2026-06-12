@@ -22,6 +22,11 @@ export default function Checkout() {
   const types   = ticketsForVenue(venueId ?? '');
   const ageOk   = useAuthStore(selectAgeVerified);
 
+  // All hooks must be declared before any early returns
+  const [selected, setSelected] = useState<TicketType | null>(null);
+  const [qty, setQty]           = useState(1);
+  const [loading, setLoading]   = useState(false);
+
   if (!venue || types.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.ink, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
@@ -33,11 +38,9 @@ export default function Checkout() {
     );
   }
 
-  const [selected, setSelected] = useState<TicketType>(types[1] ?? types[0]);
-  const [qty, setQty]           = useState(1);
-  const [loading, setLoading]   = useState(false);
+  const activeTicket = selected ?? types[1] ?? types[0];
 
-  const totalCents = selected.price * qty;
+  const totalCents = activeTicket.price * qty;
   const feeCents   = platformFeeCents(totalCents);
 
   const guardAge = (): boolean => {
@@ -56,12 +59,12 @@ export default function Checkout() {
     if (!guardAge()) return;
     setLoading(true);
     try {
-      const session = await createPaymentIntent(venueId!, selected, qty);
-      const result  = await payWithApplePay(session, selected);
+      const session = await createPaymentIntent(venueId!, activeTicket, qty);
+      const result  = await payWithApplePay(session, activeTicket);
       if (!result.ok) throw new Error(result.error);
       const ticket = finalizeTicket(
         { id: venue.id, name: venue.name, city: venue.city },
-        selected,
+        activeTicket,
         session.paymentIntentId!,
       );
       router.replace(`/tickets/${ticket.id}`);
@@ -76,12 +79,12 @@ export default function Checkout() {
     if (!guardAge()) return;
     setLoading(true);
     try {
-      const session = await createPaymentIntent(venueId!, selected, qty);
+      const session = await createPaymentIntent(venueId!, activeTicket, qty);
       const result  = await payWithCard(session);
       if (!result.ok) throw new Error(result.error);
       const ticket = finalizeTicket(
         { id: venue.id, name: venue.name, city: venue.city },
-        selected,
+        activeTicket,
         session.paymentIntentId!,
       );
       router.replace(`/tickets/${ticket.id}`);
@@ -109,7 +112,7 @@ export default function Checkout() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>SELECT TICKET</Text>
           {types.map(t => {
-            const on = selected.id === t.id;
+            const on = activeTicket.id === t.id;
             return (
               <TouchableOpacity
                 key={t.id}
@@ -152,15 +155,15 @@ export default function Checkout() {
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryKey}>SUBTOTAL</Text>
-            <Text style={styles.summaryVal}>{formatPrice(totalCents, selected.currency)}</Text>
+            <Text style={styles.summaryVal}>{formatPrice(totalCents, activeTicket.currency)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryKey}>SERVICE FEE</Text>
-            <Text style={styles.summaryVal}>{formatPrice(feeCents, selected.currency)}</Text>
+            <Text style={styles.summaryVal}>{formatPrice(feeCents, activeTicket.currency)}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalKey}>TOTAL</Text>
-            <Text style={styles.totalVal}>{formatPrice(totalCents + feeCents, selected.currency)}</Text>
+            <Text style={styles.totalVal}>{formatPrice(totalCents + feeCents, activeTicket.currency)}</Text>
           </View>
         </View>
 
