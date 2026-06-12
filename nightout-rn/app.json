@@ -27,13 +27,14 @@
         "backgroundColor": "#0d0010"
       },
       "package": "com.nightout.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "RECORD_AUDIO"]
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "RECORD_AUDIO", "RECEIVE_BOOT_COMPLETED", "VIBRATE", "POST_NOTIFICATIONS"]
     },
     "plugins": [
       "expo-router",
       "expo-font",
       ["expo-location", { "locationAlwaysAndWhenInUsePermission": "NightOut uses your location for Safe Night emergency sharing." }],
-      ["expo-image-picker", { "photosPermission": "NightOut needs photo library access to upload venue stories.", "cameraPermission": "NightOut needs camera access to record venue stories.", "microphonePermission": "NightOut needs microphone access to record venue stories." }]
+      ["expo-image-picker", { "photosPermission": "NightOut needs photo library access to upload venue stories.", "cameraPermission": "NightOut needs camera access to record venue stories.", "microphonePermission": "NightOut needs microphone access to record venue stories." }],
+      ["expo-notifications", { "icon": "./assets/icon.png", "color": "#FFB800", "sounds": [] }]
     ],
     "experiments": {
       "typedRoutes": true

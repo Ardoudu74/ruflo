@@ -11,15 +11,17 @@ export interface LiveVenueData {
   loading: boolean;
 }
 
-export function useLiveVenueData(venue: Venue): LiveVenueData {
+export function useLiveVenueData(venue: Venue | null | undefined): LiveVenueData {
   const [places, setPlaces] = useState<PlacesDetails | null>(null);
   const [events, setEvents] = useState<EventbriteEvent[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!venue) return;
     let cancelled = false;
     setLoading(true);
+
     Promise.all([
       fetchPlaceDetails(venue),
       fetchTonightsEvents(venue.latitude, venue.longitude),
@@ -31,8 +33,9 @@ export function useLiveVenueData(venue: Venue): LiveVenueData {
       setWeather(w);
       setLoading(false);
     });
+
     return () => { cancelled = true; };
-  }, [venue.id]);
+  }, [venue?.id]);
 
   return { places, events, weather, loading };
 }
