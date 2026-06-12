@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -10,18 +10,33 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Colors } from '../constants/Colors';
 import { requestNotificationPermissions } from '../services/notifications';
 
+function useAuthHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(
+    () => useAuthStore.persist.hasHydrated()
+  );
+  useEffect(() => {
+    if (hydrated) return;
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+    if (useAuthStore.persist.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, []);
+  return hydrated;
+}
+
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router    = useRouter();
   const segments  = useSegments();
   const uid       = useAuthStore(s => s.uid);
+  const hydrated  = useAuthHydrated();
 
   useEffect(() => {
+    if (!hydrated) return;
     const inAuth       = segments[0] === 'auth';
     const inOnboarding = segments[0] === 'onboarding';
     if (!uid && !inAuth && !inOnboarding) {
       router.replace('/auth');
     }
-  }, [uid, segments]);
+  }, [uid, segments, hydrated]);
 
   return <>{children}</>;
 }
