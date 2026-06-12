@@ -9,18 +9,22 @@ import { Colors } from '../../constants/Colors';
 import { Type } from '../../constants/Typography';
 import { Spacing, Radius } from '../../constants/Spacing';
 import { signInWithApple, signInWithEmail, registerWithEmail, continueAsGuest } from '../../services/auth';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAuthStore, selectHasProfile, selectAgeVerified } from '../../store/useAuthStore';
 
 type Mode = 'landing' | 'signin' | 'register';
 
 export default function AuthScreen() {
-  const router = useRouter();
+  const router   = useRouter();
   const { loading, error } = useAuthStore();
-  const [mode, setMode] = useState<Mode>('landing');
-  const [email, setEmail] = useState('');
-  const [pw, setPw] = useState('');
+  const [mode, setMode]     = useState<Mode>('landing');
+  const [email, setEmail]   = useState('');
+  const [pw, setPw]         = useState('');
 
-  const afterAuth = () => router.replace('/onboarding');
+  const afterAuth = () => {
+    const state = useAuthStore.getState();
+    const complete = selectHasProfile(state) && selectAgeVerified(state);
+    router.replace(complete ? '/(tabs)' : '/onboarding');
+  };
 
   const handleApple = async () => {
     await signInWithApple();
@@ -43,6 +47,7 @@ export default function AuthScreen() {
       <View style={styles.root}>
         <LinearGradient colors={['#1a0a2e', '#0d0010', '#000']} style={StyleSheet.absoluteFill} />
 
+        {/* Logo */}
         <View style={styles.logoWrap}>
           <Text style={styles.logoIcon}>🍸</Text>
           <Text style={styles.logoName}>NIGHTOUT</Text>
@@ -51,6 +56,7 @@ export default function AuthScreen() {
 
         {mode === 'landing' && (
           <View style={styles.buttons}>
+            {/* Sign In with Apple — mandatory per App Store guidelines */}
             <TouchableOpacity style={styles.appleBtn} onPress={handleApple} disabled={loading}>
               <Text style={styles.appleBtnIcon}></Text>
               <Text style={styles.appleBtnText}>SIGN IN WITH APPLE</Text>
@@ -82,6 +88,7 @@ export default function AuthScreen() {
             <Text style={styles.formTitle}>
               {mode === 'signin' ? 'WELCOME BACK' : 'CREATE ACCOUNT'}
             </Text>
+
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -99,12 +106,21 @@ export default function AuthScreen() {
               value={pw}
               onChangeText={setPw}
             />
+
             {error && <Text style={styles.error}>{error}</Text>}
-            <TouchableOpacity style={styles.submitBtn} onPress={handleEmail} disabled={loading || !email || !pw}>
+
+            <TouchableOpacity
+              style={styles.submitBtn}
+              onPress={handleEmail}
+              disabled={loading || !email || !pw}
+            >
               {loading
                 ? <ActivityIndicator color={Colors.ink} />
-                : <Text style={styles.submitBtnText}>{mode === 'signin' ? 'SIGN IN' : 'REGISTER'}</Text>}
+                : <Text style={styles.submitBtnText}>
+                    {mode === 'signin' ? 'SIGN IN' : 'REGISTER'}
+                  </Text>}
             </TouchableOpacity>
+
             <TouchableOpacity onPress={() => setMode('landing')} style={styles.backLink}>
               <Text style={styles.backLinkText}>← BACK</Text>
             </TouchableOpacity>
@@ -127,21 +143,34 @@ const styles = StyleSheet.create({
   logoName:    { ...Type.heroTitle, color: Colors.textPrimary, fontSize: 48, letterSpacing: -1 },
   tagline:     { ...Type.label, color: Colors.gold, letterSpacing: 4 },
   buttons:     { gap: Spacing.md },
-  appleBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#fff', borderRadius: Radius.xl, padding: Spacing.lg },
+  appleBtn:    {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#fff', borderRadius: Radius.xl, padding: Spacing.lg,
+  },
   appleBtnIcon:{ fontSize: 18 },
   appleBtnText:{ ...Type.button, color: '#000' },
   divider:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { ...Type.tag, color: Colors.textMuted },
-  emailBtn:    { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: Radius.xl, padding: Spacing.lg, alignItems: 'center' },
+  emailBtn:    {
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: Radius.xl,
+    padding: Spacing.lg, alignItems: 'center',
+  },
   emailBtnText:   { ...Type.button, color: Colors.textPrimary },
-  registerBtn:    { borderWidth: 1, borderColor: Colors.gold + '55', borderRadius: Radius.xl, padding: Spacing.lg, alignItems: 'center' },
+  registerBtn:    {
+    borderWidth: 1, borderColor: Colors.gold + '55', borderRadius: Radius.xl,
+    padding: Spacing.lg, alignItems: 'center',
+  },
   registerBtnText:{ ...Type.button, color: Colors.gold },
   guestBtn:       { alignItems: 'center', padding: Spacing.md },
   guestBtnText:   { ...Type.label, color: Colors.textMuted },
   form:           { gap: Spacing.lg },
   formTitle:      { ...Type.sectionHead, color: Colors.textPrimary },
-  input:          { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: Radius.lg, paddingHorizontal: Spacing.lg, height: 52, ...Type.body, color: Colors.textPrimary },
+  input:          {
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.lg, height: 52,
+    ...Type.body, color: Colors.textPrimary,
+  },
   error:          { ...Type.caption, color: '#FF3B30' },
   submitBtn:      { backgroundColor: Colors.gold, borderRadius: Radius.xl, padding: Spacing.lg, alignItems: 'center' },
   submitBtnText:  { ...Type.button, color: Colors.ink },
