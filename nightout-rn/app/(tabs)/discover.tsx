@@ -30,7 +30,7 @@ export default function DiscoverTab() {
   const results = useMemo(() => {
     return VENUES.filter(v => {
       const q = query.toLowerCase();
-      const matchQ = !q || v.name.toLowerCase().includes(q) || v.city.includes(q) || v.neighborhood.toLowerCase().includes(q);
+      const matchQ = !q || v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q) || v.neighborhood.toLowerCase().includes(q);
       const matchG = !activeGenre || v.genres.includes(activeGenre);
       const matchP = !activePrice || v.priceRange === activePrice;
       const matchOpen = !openOnly || v.isOpen;
@@ -72,7 +72,7 @@ export default function DiscoverTab() {
           >
             <Text style={[styles.toggleText, openOnly && { color: Colors.ink }]}>● OPEN NOW</Text>
           </TouchableOpacity>
-          {profile?.genres?.length > 0 && (
+          {(profile?.genres?.length ?? 0) > 0 && (
             <TouchableOpacity
               style={[styles.toggleChip, showMatches && styles.toggleActive]}
               onPress={() => setMatches(v => !v)}

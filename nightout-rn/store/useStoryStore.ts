@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { asyncStorage } from './storage';
 import { Story } from '../types/story';
 
 interface StoryStore {
@@ -11,7 +13,9 @@ interface StoryStore {
   forCity: (city: string) => Story[];
 }
 
-export const useStoryStore = create<StoryStore>((set, get) => ({
+export const useStoryStore = create<StoryStore>()(
+  persist(
+  (set, get) => ({
   stories: [],
   add: (s) => set(st => ({ stories: [s, ...st.stories] })),
   report: (id) => set(st => ({
@@ -34,4 +38,12 @@ export const useStoryStore = create<StoryStore>((set, get) => ({
     const now = Date.now();
     return get().stories.filter(s => s.city === city && s.expiresAt > now && s.status === 'active');
   },
-}));
+  }),
+  {
+    name:    'nightout-stories',
+    storage: createJSONStorage(() => asyncStorage),
+    onRehydrateStorage: () => (state) => {
+      state?.purgeExpired();
+    },
+  }
+));
