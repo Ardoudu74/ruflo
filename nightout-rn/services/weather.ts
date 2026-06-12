@@ -14,7 +14,9 @@ export interface WeatherData {
 export async function fetchWeather(lat: number, lng: number): Promise<WeatherData | null> {
   if (!API_KEY) return null;
   try {
-    const r = await fetch(`${BASE}/weather?lat=${lat}&lon=${lng}&units=metric&appid=${API_KEY}`);
+    const r = await fetch(
+      `${BASE}/weather?lat=${lat}&lon=${lng}&units=metric&appid=${API_KEY}`
+    );
     const j = await r.json();
     const tempC: number = j.main?.temp ?? 20;
     const windMps: number = j.wind?.speed ?? 0;

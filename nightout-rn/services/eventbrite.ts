@@ -21,12 +21,15 @@ export async function fetchTonightsEvents(lat: number, lng: number, radiusKm = 2
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(6, 0, 0, 0);
 
+  const startUtc = tonight.toISOString().replace('.000', '');
+  const endUtc = tomorrow.toISOString().replace('.000', '');
+
   const params = new URLSearchParams({
     'location.latitude': String(lat),
     'location.longitude': String(lng),
     'location.within': `${radiusKm}km`,
-    'start_date.range_start': tonight.toISOString().replace('.000', ''),
-    'start_date.range_end': tomorrow.toISOString().replace('.000', ''),
+    'start_date.range_start': startUtc,
+    'start_date.range_end': endUtc,
     categories: '103',
     expand: 'ticket_availability',
   });

@@ -40,7 +40,7 @@ export async function scheduleTicketConfirmation(venueName: string, eventDate: s
       data: { type: 'ticket_confirmed' },
       color: '#FFB800',
     },
-    trigger: null, // immediate
+    trigger: null,
   });
 }
 

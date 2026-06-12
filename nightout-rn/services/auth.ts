@@ -5,6 +5,9 @@
  *   EXPO_PUBLIC_FIREBASE_API_KEY
  *   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
  *   EXPO_PUBLIC_FIREBASE_PROJECT_ID
+ *
+ * Install deps:
+ *   npx expo install @react-native-firebase/app @react-native-firebase/auth expo-apple-authentication
  */
 
 import { useAuthStore } from '../store/useAuthStore';
@@ -23,20 +26,33 @@ const DEFAULT_PROFILE = (uid: string, email?: string, name?: string): UserProfil
   ageVerified: false,
 });
 
+// ── Apple Sign-In ─────────────────────────────────────────────────────────
+
 export async function signInWithApple(): Promise<void> {
   const store = useAuthStore.getState();
   store.setLoading(true);
   try {
     /**
-     * Production:
+     * Production implementation:
+     *
      * import * as AppleAuthentication from 'expo-apple-authentication';
      * import auth from '@react-native-firebase/auth';
-     * const credential = await AppleAuthentication.signInAsync({ requestedScopes: [...] });
-     * const appleCredential = auth.AppleAuthProvider.credential(credential.identityToken!);
+     *
+     * const credential = await AppleAuthentication.signInAsync({
+     *   requestedScopes: [
+     *     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+     *     AppleAuthentication.AppleAuthenticationScope.EMAIL,
+     *   ],
+     * });
+     * const { identityToken } = credential;
+     * const appleCredential = auth.AppleAuthProvider.credential(identityToken!);
      * const userCredential = await auth().signInWithCredential(appleCredential);
-     * store.setAuth(userCredential.user.uid, 'apple');
-     * store.setProfile(DEFAULT_PROFILE(userCredential.user.uid, ...));
+     * const { uid, email, displayName } = userCredential.user;
+     * store.setAuth(uid, 'apple');
+     * store.setProfile(DEFAULT_PROFILE(uid, email ?? undefined, displayName ?? undefined));
      */
+
+    // ── Stub (dev only) ──────────────────────────────────────────────────
     await new Promise(r => setTimeout(r, 800));
     const uid = 'apple_' + Date.now();
     store.setAuth(uid, 'apple');
@@ -47,6 +63,8 @@ export async function signInWithApple(): Promise<void> {
     store.setLoading(false);
   }
 }
+
+// ── Email / Password ───────────────────────────────────────────────────────
 
 export async function signInWithEmail(email: string, password: string): Promise<void> {
   const store = useAuthStore.getState();
@@ -78,11 +96,15 @@ export async function registerWithEmail(email: string, password: string): Promis
   }
 }
 
+// ── Guest ──────────────────────────────────────────────────────────────────
+
 export function continueAsGuest(): void {
   const store = useAuthStore.getState();
   store.setAuth('guest', 'guest');
   store.setProfile(DEFAULT_PROFILE('guest'));
 }
+
+// ── Sign Out ───────────────────────────────────────────────────────────────
 
 export async function signOut(): Promise<void> {
   useAuthStore.getState().signOut();

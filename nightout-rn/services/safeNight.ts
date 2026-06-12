@@ -18,8 +18,6 @@ import { scheduleSafeNightReminder, cancelNotification } from './notifications';
 let locationSubscription: Location.LocationSubscription | null = null;
 let safeNightNotificationId: string | null = null;
 
-// ── Location tracking ─────────────────────────────────────────────────────
-
 export async function startLocationSharing(): Promise<boolean> {
   const store = useSafeNightStore.getState();
   const { status } = await Location.requestForegroundPermissionsAsync();
@@ -58,8 +56,6 @@ export function stopLocationSharing(): void {
   }
 }
 
-// ── Auto-disable at 06:00 ─────────────────────────────────────────────────
-
 function scheduleAutoDisable(): void {
   const now  = new Date();
   const next = new Date();
@@ -69,8 +65,6 @@ function scheduleAutoDisable(): void {
   setTimeout(() => stopLocationSharing(), ms);
 }
 
-// ── SMS via backend ────────────────────────────────────────────────────────
-
 async function sendLocationToContact(lat: number, lng: number): Promise<void> {
   const profile = useAuthStore.getState().profile;
   const contact = profile?.emergencyContact;
@@ -79,20 +73,9 @@ async function sendLocationToContact(lat: number, lng: number): Promise<void> {
   const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
   const body    = `[NightOut Safe Night] ${profile.displayName} is here: ${mapsUrl}`;
 
-  /**
-   * Production — call your Firebase Function:
-   * await fetch('https://your-backend.com/api/sms', {
-   *   method: 'POST',
-   *   headers: { 'Content-Type': 'application/json' },
-   *   body: JSON.stringify({ to: contact.phone, body }),
-   * });
-   */
-
   // Dev stub: log only
   console.log('[SafeNight SMS stub]', contact.phone, body);
 }
-
-// ── SOS ───────────────────────────────────────────────────────────────────────
 
 export async function triggerSOS(): Promise<void> {
   const store   = useSafeNightStore.getState();
@@ -103,21 +86,12 @@ export async function triggerSOS(): Promise<void> {
 
   store.triggerSOS();
 
-  // 1. SMS emergency contact
   if (contact) {
     const mapsUrl = lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : '(location unavailable)';
     const body    = `🆘 SOS from ${profile?.displayName ?? 'NightOut user'} — ${mapsUrl}`;
-    /**
-     * Production: call backend /api/sos
-     * await fetch('https://your-backend.com/api/sos', {
-     *   method: 'POST',
-     *   body: JSON.stringify({ to: contact.phone, body }),
-     * });
-     */
     console.log('[SOS SMS stub]', contact.phone, body);
   }
 
-  // 2. Prompt user to call local emergency number
   Alert.alert(
     '⚡ SOS Sent',
     `Message sent to ${contact?.name ?? 'your emergency contact'}.\n\nCall emergency services?`,

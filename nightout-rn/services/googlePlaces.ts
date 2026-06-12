@@ -37,9 +37,11 @@ export async function fetchPlaceDetails(venue: Venue): Promise<PlacesDetails | n
     const j = await r.json();
     const d = j.result;
     if (!d) return null;
+
     const photoUrls = (d.photos ?? []).slice(0, 5).map((p: { photo_reference: string }) =>
       `${BASE}/place/photo?maxwidth=800&photo_reference=${p.photo_reference}&key=${API_KEY}`
     );
+
     return {
       googleRating: d.rating ?? venue.googleRating,
       totalRatings: d.user_ratings_total ?? 0,
