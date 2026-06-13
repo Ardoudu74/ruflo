@@ -1,0 +1,28 @@
+FONTS REQUIRED FOR NIGHTOUT
+============================
+
+1. Clash Display (5 weights)
+   Download: https://www.fontshare.com/fonts/clash-display
+   Files needed:
+   - ClashDisplay-Regular.otf
+   - ClashDisplay-Medium.otf
+   - ClashDisplay-Semibold.otf
+   - ClashDisplay-Bold.otf
+   - ClashDisplay-Extrabold.otf
+
+2. Bebas Neue
+   Download: https://fonts.google.com/specimen/Bebas+Neue
+   File needed:
+   - BebasNeue-Regular.ttf
+
+3. Inter (4 weights)
+   Download: https://fonts.google.com/specimen/Inter
+   Files needed:
+   - Inter-Regular.ttf
+   - Inter-Medium.ttf
+   - Inter-SemiBold.ttf
+   - Inter-Bold.ttf
+
+Place all files in: assets/fonts/
+
+NOTE: App works without fonts (falls back to system fonts).
